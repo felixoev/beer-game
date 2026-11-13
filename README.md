@@ -1,6 +1,6 @@
 # Supply Chain Beer Game — Live-Version
 
-Diese Version ermöglicht ein gemeinsames Spiel auf mehreren Geräten. GitHub enthält den Quellcode und veröffentlicht die Web-App über GitHub Pages. Firebase Realtime Database speichert Spielstände und synchronisiert Änderungen live.
+Diese Version ermöglicht ein gemeinsames Spiel auf mehreren Geräten. GitHub enthält den Quellcode und veröffentlicht die Web-App über GitHub Pages. Firebase Realtime Database speichert Spielstände und synchronisiert Änderungen live..
 
 ## Firebase einrichten
 
