@@ -1,6 +1,6 @@
 // Copy the Firebase web-app configuration from Firebase Console > Project settings.
 // These browser config values identify the project; Realtime Database rules protect its data.
-export const const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyC_VNrmW3aTXOdjKdAWDtaeXntzE9ZgZuI",
   authDomain: "beer-game-9fa6a.firebaseapp.com",
   databaseURL: "https://beer-game-9fa6a-default-rtdb.europe-west1.firebasedatabase.app",
