@@ -25,7 +25,7 @@ import {firebaseConfig} from "./firebase-config.js";
 
 const roles=[{id:"retail",name:"Einzelhandel",icon:"🏪",demand:"Kundennachfrage"},{id:"wholesale",name:"Großhandel",icon:"📦",demand:"Auftrag Einzelhandel"},{id:"distribution",name:"Distribution",icon:"🚚",demand:"Auftrag Großhandel"},{id:"factory",name:"Fabrik",icon:"🏭",demand:"Auftrag Distribution"}];
 const $=s=>document.querySelector(s),safeName=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let app,auth,db,user,gameCode,mode,roleId,meta={},publicState={},roleStates={},orders={},unsubs=[];
+let app,auth,db,user,gameCode,mode,roleId,meta={},publicState={},roleStates={},orders={},unsubs=[],connectionUnsub=null;
 function errorAt(where,message){const el=$(where);el.textContent=message;el.classList.remove("hidden");}
 function clearError(where){const el=$(where);el.textContent="";el.classList.add("hidden");}
 function setBusy(button,busy,label){button.disabled=busy;button.dataset.old??=button.textContent;button.textContent=busy?label:button.dataset.old;}
@@ -36,7 +36,7 @@ function localSession(){try{return JSON.parse(localStorage.getItem("beerGameSess
 function saveSession(){localStorage.setItem("beerGameSession",JSON.stringify({gameCode,mode,roleId}));}
 async function ensureAuth(){if(!user){const credential=await signInAnonymously(auth);user=credential.user;}return user;}
 function setConnection(online){$("#onlineLed").classList.toggle("on",!!online);$("#connectionText").textContent=online?"Firebase live":"Offline";}
-function startListeners(){cleanListeners();const root=`games/${gameCode}`;unsubs.push(onValue(ref(db,".info/connected"),s=>setConnection(s.val()===true)));
+function startListeners(){cleanListeners();const root=`games/${gameCode}`;
   unsubs.push(onValue(ref(db,`${root}/public`),s=>{publicState=s.val()||{};renderGame();}));
   if(mode==="host"){
     unsubs.push(onValue(ref(db,`${root}/meta`),s=>{meta=s.val()||{};renderGame();}));
@@ -67,7 +67,7 @@ async function resolveRound(){clearError("#gameError");const btn=$("#resolveBtn"
 function friendlyError(e){const code=e?.code||"";if(code.includes("PERMISSION_DENIED")||code.includes("permission-denied"))return "Firebase hat den Zugriff abgelehnt. Prüfe Spielcode, Rollen-Code und ob die aktuellen database.rules.json-Regeln in Firebase veröffentlicht sind.";if(code.includes("network"))return "Keine Verbindung zu Firebase. Prüfe deine Internetverbindung.";return e?.message||"Unbekannter Fehler.";}
 function leaveGame(clear=true){cleanListeners();if(clear)localStorage.removeItem("beerGameSession");gameCode=null;mode=null;roleId=null;meta={};publicState={};roleStates={};orders={};$("#game").classList.add("hidden");$("#lobby").classList.remove("hidden");}
 async function restoreSession(){const saved=localSession();if(!saved)return;try{await ensureAuth();gameCode=saved.gameCode;mode=saved.mode;roleId=saved.roleId;if(mode==="host"){const s=await get(ref(db,`games/${gameCode}/meta`));if(!s.exists()||s.val().hostUid!==user.uid)throw new Error("Host-Zugang nicht mehr verfügbar");meta=s.val();}else{const s=await get(ref(db,`games/${gameCode}/members/${user.uid}`));if(!s.exists())throw new Error("Gruppen-Zugang nicht mehr verfügbar");roleId=s.val().role;}enterGame(gameCode,mode,roleId);}catch{localStorage.removeItem("beerGameSession");}}
-async function init(){if(!isConfigured()){errorAt("#lobbyError","Firebase ist noch nicht konfiguriert. Trage deine Web-App-Daten in public/firebase-config.js ein, aktiviere Anonymous Authentication und veröffentliche database.rules.json. Die lokale Demo bleibt separat in offline-version.html.");return;}try{app=initializeApp(firebaseConfig);auth=getAuth(app);db=getDatabase(app);await ensureAuth();onAuthStateChanged(auth,async current=>{user=current;if(current)await restoreSession();});}catch(e){errorAt("#lobbyError",friendlyError(e));}}
+async function init(){if(!isConfigured()){errorAt("#lobbyError","Firebase ist noch nicht konfiguriert. Trage deine Web-App-Daten in public/firebase-config.js ein, aktiviere Anonymous Authentication und veröffentliche database.rules.json. Die lokale Demo bleibt separat in offline-version.html.");return;}try{app=initializeApp(firebaseConfig);auth=getAuth(app);db=getDatabase(app);connectionUnsub=onValue(ref(db,".info/connected"),s=>setConnection(s.val()===true),()=>setConnection(false));await ensureAuth();onAuthStateChanged(auth,async current=>{user=current;if(current)await restoreSession();});}catch(e){errorAt("#lobbyError",friendlyError(e));setConnection(false);}}
 $("#createBtn").onclick=createGame;$("#joinBtn").onclick=joinGame;$("#leaveBtn").onclick=()=>leaveGame();init();
 </script>
 </body></html>
