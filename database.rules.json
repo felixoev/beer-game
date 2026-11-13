@@ -1,0 +1,38 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "games": {
+      "$gameCode": {
+        "meta": {
+          ".read": "auth != null && data.child('hostUid').val() === auth.uid",
+          ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() === auth.uid) || data.child('hostUid').val() === auth.uid)"
+        },
+        "public": {
+          ".read": "auth != null && (root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid || root.child('games').child($gameCode).child('members').child(auth.uid).exists())",
+          ".write": "auth != null && root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid"
+        },
+        "members": {
+          "$uid": {
+            ".read": "auth != null && (auth.uid === $uid || root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid)",
+            ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.child('role').isString() && newData.child('role').val() !== 'host' && newData.child('invite').isString() && newData.child('invite').val() === root.child('games').child($gameCode).child('meta').child('invites').child(newData.child('role').val()).val()",
+            ".validate": "newData.hasChildren(['role', 'name', 'invite']) && (newData.child('role').val() === 'retail' || newData.child('role').val() === 'wholesale' || newData.child('role').val() === 'distribution' || newData.child('role').val() === 'factory') && newData.child('name').isString() && newData.child('name').val().length <= 50"
+          }
+        },
+        "roles": {
+          "$role": {
+            ".read": "auth != null && (root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid || root.child('games').child($gameCode).child('members').child(auth.uid).child('role').val() === $role)",
+            ".write": "auth != null && root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid"
+          }
+        },
+        "orders": {
+          "$role": {
+            ".read": "auth != null && (root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid || root.child('games').child($gameCode).child('members').child(auth.uid).child('role').val() === $role)",
+            ".write": "auth != null && root.child('games').child($gameCode).child('meta').child('status').val() === 'running' && (root.child('games').child($gameCode).child('meta').child('hostUid').val() === auth.uid || root.child('games').child($gameCode).child('members').child(auth.uid).child('role').val() === $role)",
+            ".validate": "newData.hasChildren(['week', 'quantity']) && newData.child('week').val() === root.child('games').child($gameCode).child('meta').child('week').val() && newData.child('quantity').isNumber() && newData.child('quantity').val() % 1 === 0 && newData.child('quantity').val() >= 0 && newData.child('quantity').val() <= 999"
+          }
+        }
+      }
+    }
+  }
+}
